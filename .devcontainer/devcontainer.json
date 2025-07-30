@@ -18,21 +18,41 @@
   },
   "postCreateCommand": "sudo rm -f run-simulator && \
     ln -s /ursim-polyscopex-0.14.47/run-simulator . && \
-    sudo rsync -ac --info=progress2 --exclude=install.sh --exclude=readme.txt /sdk-polyscopex-6.1.29/ ${containerWorkspaceFolder} && \
+    sudo rsync -ac --exclude=install.sh --exclude=readme.txt /sdk-polyscopex-6.1.29/ ${containerWorkspaceFolder} && \
     if [ -d './saved-ursim-state' ]; then \
-      echo '🔁 Восстанавливаем сохранённое состояние URsim...'; \
+      echo '🔁 Восстанавливаем состояние URsim...'; \
       rm -rf ~/.ursim; \
       cp -r ./saved-ursim-state ~/.ursim; \
-    fi",
+    fi && \
+    echo '✅ Подготовка завершена.'",
+
   "postStartCommand": "sudo chmod 666 /var/run/docker.sock && \
+    echo '🔧 Проверяем Docker...' && \
+    if ! command -v docker &> /dev/null; then \
+      echo '❌ Docker не установлен!'; \
+      exit 1; \
+    fi && \
+    echo '✅ Docker доступен.' && \
+    \
+    echo '🔧 Делаем run-simulator исполняемым...' && \
+    chmod +x ./run-simulator || echo '⚠️ Не удалось сделать исполняемым' && \
+    \
+    echo '🔧 Запускаем URsim в фоне...' && \
     if docker ps | grep -q 'ursim'; then \
       echo '🟢 URsim уже запущен'; \
     else \
-      echo '🚀 Запускаем URsim в фоне...'; \
-      ./run-simulator --no-gui --resume-state & \
+      echo '🚀 Запускаем ./run-simulator --no-gui --resume-state' && \
+      ./run-simulator --no-gui --resume-state > urstim-launch.log 2>&1 & \
+      sleep 5 && \
+      if pgrep -f 'run-simulator' > /dev/null; then \
+        echo 'mPid запущен'; \
+      else \
+        echo '❌ run-simulator не запустился. Смотри лог: cat urstim-launch.log'; \
+      fi \
     fi && \
-    sleep 15 && \
-    echo '💡 Попробуй открыть интерфейс Polyscope: http://localhost:4200'",
+    echo '💡 Проверь статус: docker ps' && \
+    echo '💡 Если URsim запущен — заходи на http://localhost:4200'",
+
   "containerEnv": {
     "SHELL": "/bin/bash",
     "DEV_CONTAINER": "true",
