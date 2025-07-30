@@ -16,23 +16,11 @@
   "updateContentCommand": {
     "setOwnership": "sudo chown -R dev:dev ${containerWorkspaceFolder} /ursim-polyscopex-0.14.47 /sdk-polyscopex-6.1.29"
   },
-  "postCreateCommand": "sudo rm -f run-simulator && \
-    ln -s /ursim-polyscopex-0.14.47/run-simulator . && \
-    sudo rsync -ac --info=progress2 --exclude=install.sh --exclude=readme.txt /sdk-polyscopex-6.1.29/ ${containerWorkspaceFolder} && \
-    if [ -d './saved-ursim-state' ]; then \
-      echo '🔁 Восстанавливаем сохранённое состояние URsim...'; \
-      rm -rf ~/.ursim; \
-      cp -r ./saved-ursim-state ~/.ursim; \
-    fi",
-  "postStartCommand": "sudo chmod 666 /var/run/docker.sock && \
-    if docker ps | grep -q 'ursim'; then \
-      echo '🟢 URsim уже запущен'; \
-    else \
-      echo '🚀 Запускаем URsim в фоне...'; \
-      ./run-simulator --no-gui --resume-state & \
-    fi && \
-    sleep 15 && \
-    echo '💡 Попробуй открыть интерфейс Polyscope: http://localhost:4200'",
+  "postCreateCommand": {
+    "prepareUrsim": "sudo rm -f run-simulator && ln -s /ursim-polyscopex-0.14.47/run-simulator ${containerWorkspaceFolder}",
+    "prepareSdk": "sudo rsync -ac --info=progress2 --exclude=install.sh --exclude=readme.txt /sdk-polyscopex-6.1.29/ ${containerWorkspaceFolder}",
+  },
+  "postStartCommand": "sudo chmod 666 /var/run/docker.sock",
   "containerEnv": {
     "SHELL": "/bin/bash",
     "DEV_CONTAINER": "true",
@@ -59,7 +47,7 @@
         "ms-python.python",
         "ms-vscode.vscode-typescript-next",
         "redhat.vscode-xml",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
       ]
     }
   }
